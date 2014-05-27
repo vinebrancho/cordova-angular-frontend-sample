@@ -26,7 +26,7 @@ module.controller('LogoutCtrl', function ($scope, $location, oauth2serverFactory
     };
 });
 
-module.controller('LoginCtrl', function($scope, $rootScope, $location, $window,$resource, authFactory, tokenFactory, redirectFactory, oauth2serverFactory) {
+module.controller('LoginCtrl', function($scope, $rootScope, $location, $window,$resource, authFactory, tokenFactory, redirectFactory, oauth2serverFactory, authPopupFactory) {
     $scope.loadingView = true;
     $scope.alertMessage = null;
     $scope.loginLocalAccount = function (credentials) {
@@ -58,46 +58,11 @@ module.controller('LoginCtrl', function($scope, $rootScope, $location, $window,$
 
     $scope.loginSocialAccount = function (socialName) {
         var url = prefix + '/auth/login/' + socialName;
-		var successUrl = url + '/callback/success';
-		var failureUrl = url + '/callback/failure';
 		var ref = $window.open(url, '_blank', 'location=yes,toolbar=yes');
-
-		ref.addEventListener('loadstop', function(event) {
-			if (event.url.match(successUrl)) {
-				ref.executeScript({
-					code: 'getResult();'
-				}, function (values) {
-					window.alert('success');
-					ref.close();
-					if (values[0].type == 'login') {
-						window.alert(values[0].data.name);
-						$rootscope.$emit('social-login:success', values[0].data); 
-					} else if (values[0].type == 'connect') {
-						$rootscope.$emit('social-connect:success', values[0].data);
-					} else {
-						console.log('wrong type');
-					}
-				});
-			} else if (event.url.match(failureUrl)) {
-				ref.executeScript({
-					code: 'getResult();'
-				}, function (values) {
-					window.alert('failure');
-					if (values[0].type == 'login') {
-						   $rootscope.$emit('social-login:failure', values[0].data); 
-					} else if (values[0].type == 'connect') {
-						   $rootScope.$emit('social-connect:failure', values[0].data); 
-					} else {
-						console.log('wrong type');
-					}
-					ref.close();
-				});
-			}
-		});
+		authPopupFactory.listenResult(ref, socialName);
     };
 
     $rootScope.$on('social-login:success', function (event, data) {
-        window.alert('social login success: ' + data.name);
         oauth2serverFactory.post({}, {
             grant_type : "password",
             username : data.name,
@@ -167,13 +132,14 @@ module.controller('SignupCtrl', function($scope, $location, $resource, authFacto
     };
 });
 
-module.controller('ProfileCtrl', function($scope, $rootScope, $route, $window, $location, $resource, authFactory, tokenFactory, profileFactory, oauth2serverFactory, profileRouteResolver) {
+module.controller('ProfileCtrl', function($scope, $rootScope, $route, $window, $location, $resource, authFactory, tokenFactory, profileFactory, oauth2serverFactory, profileRouteResolver, authPopupFactory) {
     $scope.alertMessage = null;
     $scope.profile = profileRouteResolver;
     $scope.logout = function () {
+		tokenFactory.setToken({});
+		$location.path('/');
         oauth2serverFactory.destroy(function () {
-            tokenFactory.setToken({});
-            $location.path('/');
+			console.log('success to logout');
         });
     };
 
@@ -183,7 +149,9 @@ module.controller('ProfileCtrl', function($scope, $rootScope, $route, $window, $
 
     $scope.connectSocialAccount = function (socialName) {
         $resource(prefix + '/api/session').get(function (data) {
-            $window.open(prefix + '/api/connect/' + socialName, 'target=_blank');
+			var url = prefix + '/api/connect/' + socialName;
+			var ref = $window.open(url, '_blank', 'location=yes,toolbar=yes');
+			authPopupFactory.listenResult(ref, socialName);
         });
     };
 
