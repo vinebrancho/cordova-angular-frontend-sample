@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Social Login Authentication</title>
+</head>
+<body>
+<script type="text/javascript">
+    var type = 'social-login';
+    var state = 'success';
+	var data = {
+		name: 'twitter',
+		token: 'adasdfdsfsafsafasfasdfsafs#sadfsa'
+	};
+
+    document.oauth_result = {
+        type: type,
+        state: state,
+        data: data
+    };
+
+    if (window.opener) {
+        window.opener.focus();
+
+        if (window.opener.authState) {
+            window.opener.authState(type, state, data); 
+        }
+    }
+    window.close();
+</script>
+</body>
+</html>
