@@ -1,9 +1,63 @@
 'use strict';
 
 var module = angular.module('myApp.services', ['ngResource']);
-var prefix = 'http://ec2-54-199-141-31.ap-northeast-1.compute.amazonaws.com:3000';
+var prefix = 'https://ec2-54-199-141-31.ap-northeast-1.compute.amazonaws.com:3443';
 
 module.value('version', '0.1');
+
+module.factory('authPopupFactory', function ($rootScope) {
+
+	return {
+		listenResult: function (ref, socialName) {
+			var url = prefix + '/auth/login/' + socialName;
+			var successUrl = url + '/callback/success';
+			var failureUrl = url + '/callback/failure';
+			ref.addEventListener('loadstop', function(event) {
+				if (event.url.match(successUrl)) {
+					ref.executeScript({
+						code: 'getResult();'
+					}, function (values) {
+						ref.close();
+						if (values[0].type == 'login') {
+							$rootScope.$apply(function () {
+								$rootScope.$emit(
+									'social-login:success', values[0].data); 
+							});
+						} else if (values[0].type == 'connect') {
+							$rootScope.$apply(function () {
+								$rootScope.$emit(
+									'social-connect:success', values[0].data);
+							});
+						} else {
+							console.log('wrong type');
+						}
+					});
+				} else if (event.url.match(failureUrl)) {
+					ref.executeScript({
+						code: 'getResult();'
+					}, function (values) {
+						if (values[0].type == 'login') {
+							$rootScope.$apply(function () {
+							   $rootScope.$emit(
+								   'social-login:failure', values[0].data); 
+							});
+						} else if (values[0].type == 'connect') {
+							$rootScope.$apply(function () {
+							   $rootScope.$emit(
+								   'social-connect:failure', values[0].data); 
+							});
+						} else {
+							console.log('wrong type');
+						}
+						ref.close();
+					});
+				}
+			});
+		}
+	};
+});
+
+		
 module.factory('authFactory', function ($resource) {
     return $resource(prefix + '/auth/:action/:social', {
         action: '@action',
