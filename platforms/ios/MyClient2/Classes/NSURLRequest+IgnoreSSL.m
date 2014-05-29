@@ -8,6 +8,17 @@
 
 #import "NSURLRequest+IgnoreSSL.h"
 
-@implementation NSURLRequest_IgnoreSSL
+@implementation NSURLRequest (IgnoreSSL)
+
++ (BOOL)allowsAnyHTTPSCertificateForHost:(NSString*)host
+{
+    
+    if ([host hasSuffix:@"ec2-54-199-141-31.ap-northeast-1.compute.amazonaws.com"])
+    {
+        return YES;
+    } else {
+        return NO;
+    }
+}
 
 @end

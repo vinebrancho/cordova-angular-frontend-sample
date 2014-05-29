@@ -6,8 +6,9 @@
 //
 //
 
-#import <Foundation/Foundation.h>
 
-@interface NSURLRequest_IgnoreSSL : NSObject
+@interface NSURLRequest (IgnoreSSL)
+
++ (BOOL)allowsAnyHTTPSCertificateForHost:(NSString*)host;
 
 @end
