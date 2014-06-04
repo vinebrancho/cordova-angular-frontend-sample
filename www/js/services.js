@@ -5,6 +5,51 @@ var prefix = 'https://ec2-54-199-141-31.ap-northeast-1.compute.amazonaws.com:344
 
 module.value('version', '0.1');
 
+module.factory('wishListFactory', function ($resource, $q, tokenFactory) {
+    var url = prefix + '/api/wish';
+    var methods = {
+        get: function () {
+              // check if token exists, or not.
+              // if not, current route is stopped!
+              if (!tokenFactory.isAuthenticated()) {
+                  return tokenFactory.stopRouting();
+              }
+              var promise = $resource(url, null,
+                  { 'get': { method: 'GET', isArray: true }}).get().$promise;
+
+              promise.then(
+                  function(wishs) {
+                    console.log('resolver success');
+                    return wishs;
+                  },
+                  function(error) {
+                    console.log('resolver error:' + error);
+              });
+              return promise;
+        }
+    };
+
+    return methods;
+});
+
+module.factory('wishApiFactory', function ($resource) {
+    var wishApi = $resource(prefix + '/api/wish/:id', null, {
+        create: {
+            method: 'POST',
+            isArray: false,
+        },
+        update: {
+            method: 'PUT',
+            isArray: false
+        }, 
+        remove: {
+            method: 'DELETE',
+            isArray: false
+        }
+    });
+    return wishApi;
+});
+
 module.factory('authPopupFactory', function ($rootScope) {
 
 	return {

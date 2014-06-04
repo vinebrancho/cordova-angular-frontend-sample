@@ -18,6 +18,11 @@ module.config(function($routeProvider) {
       .when('/main', {
 		  templateUrl: 'partials/main.html',
           controller: 'MainCtrl',
+          resolve: {
+              wishListResolver: function (wishListFactory) {
+                  return wishListFactory.get();
+              }
+          },
           authenticate: true
       })
       .when('/login', {

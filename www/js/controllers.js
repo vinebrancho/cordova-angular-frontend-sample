@@ -3,18 +3,49 @@
 var module = angular.module('myApp.controllers', []);
 var prefix = 'https://ec2-54-199-141-31.ap-northeast-1.compute.amazonaws.com:3443';
 
-module.controller('MainCtrl', function($scope) {
-    // add status 
-    console.log('main control');
-    $scope.items = [ 
-        { content: 'What a beatiful world', created: Date.now() },
-        { content: 'What are you doing now?!', created: Date.now() },
-        { content: 'I hope to go Hawaii', created: Date.now() }
-    ];
-    $scope.addItem = function (content) {
-        console.log('add new item');
-        $scope.items.push({ content: content, created: Date.now() }); 
+module.controller('MainCtrl', function($scope, wishListFactory, wishApiFactory, wishListResolver) {
+    $scope.editFlag = null;
+    $scope.wishList = wishListResolver;
+    $scope.createWish = function (content) {
+        console.log('create new wish');
+        wishApiFactory.create({}, {
+            content: content
+        }, function (response) {
+            console.log('success to create new wish');
+            $scope.wishList.push(response);
+        });
     };
+    $scope.updateWish = function (id, content) {
+        console.log('id: ' + id);
+        wishApiFactory.update({ id: id }, { content: content }, 
+            function (response) {
+                console.log('success to update a wish');
+                // FIXME this code doesn't apply changed value into ng-model
+                var index = $scope.wishList.length - $scope.editFlag;
+                $scope.wishList[index] = response;
+                $scope.editFlag = null;
+        });
+
+    };
+    $scope.removeWish = function (id) {
+        console.log('id: ' + id);
+        wishApiFactory.remove({ id: id }, function (response) {
+            console.log('success to remove a wish');
+        });
+        $scope.wishList = $scope.wishList.filter(function(wish) {
+            return wish._id !== id; 
+        });
+    };
+    $scope.enterEditMode = function (index, id, content) {
+        console.log('edit index: ' + index);
+        $scope.editFlag = Number(index) + 1;
+        $scope.updatedId = id;
+        $scope.updatedContent = content;
+    };
+    $scope.cancelEditMode = function () {
+        $scope.editFlag = null;
+    };
+
 });
 
 module.controller('LogoutCtrl', function ($scope, $location, oauth2serverFactory, tokenFactory) {
@@ -136,11 +167,11 @@ module.controller('ProfileCtrl', function($scope, $rootScope, $route, $window, $
     $scope.alertMessage = null;
     $scope.profile = profileRouteResolver;
     $scope.logout = function () {
-		tokenFactory.setToken({});
-		$location.path('/');
         oauth2serverFactory.destroy(function () {
 			console.log('success to logout');
         });
+		tokenFactory.setToken({});
+		$location.path('/');
     };
 
     $scope.connectLocalAccount = function () {
